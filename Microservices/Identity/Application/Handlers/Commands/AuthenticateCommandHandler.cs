@@ -1,8 +1,8 @@
 using CryptoJackpot.Domain.Core.Bus;
+using CryptoJackpot.Domain.Core.IntegrationEvents.Identity;
 using CryptoJackpot.Domain.Core.Responses;
 using CryptoJackpot.Identity.Application.Commands;
 using CryptoJackpot.Identity.Application.DTOs;
-using CryptoJackpot.Identity.Application.Events;
 using CryptoJackpot.Identity.Application.Extensions;
 using CryptoJackpot.Identity.Application.Interfaces;
 using CryptoJackpot.Identity.Domain.Interfaces;
