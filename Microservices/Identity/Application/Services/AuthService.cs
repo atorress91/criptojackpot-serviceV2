@@ -7,7 +7,8 @@ namespace CryptoJackpot.Identity.Application.Services;
 
 /// <summary>
 /// Thin service that delegates to MediatR handlers.
-/// This service can be removed if the controller injects IMediator directly.
+/// Uses MediatR for internal operations (CQRS within the microservice).
+/// IEventBus.Publish is used in handlers when other microservices need to be notified.
 /// </summary>
 public class AuthService : IAuthService
 {

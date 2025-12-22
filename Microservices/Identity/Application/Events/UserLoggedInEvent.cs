@@ -6,18 +6,10 @@ namespace CryptoJackpot.Identity.Application.Events;
 /// Event published via IEventBus when a user successfully logs in.
 /// Other microservices can subscribe to this event.
 /// </summary>
-public class UserLoggedInEvent : Event
+public class UserLoggedInEvent(long userId, string email, string userName) : Event
 {
-    public long UserId { get; }
-    public string Email { get; }
-    public string UserName { get; }
-    public DateTime LoginTime { get; }
-
-    public UserLoggedInEvent(long userId, string email, string userName)
-    {
-        UserId = userId;
-        Email = email;
-        UserName = userName;
-        LoginTime = DateTime.UtcNow;
-    }
+    public long UserId { get; } = userId;
+    public string Email { get; } = email;
+    public string UserName { get; } = userName;
+    public DateTime LoginTime { get; } = DateTime.UtcNow;
 }
