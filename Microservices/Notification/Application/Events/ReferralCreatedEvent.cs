@@ -1,0 +1,13 @@
+using CryptoJackpot.Domain.Core.Events;
+
+namespace CryptoJackpot.Notification.Application.Events;
+
+public class ReferralCreatedEvent : Event
+{
+    public string ReferrerEmail { get; set; } = null!;
+    public string ReferrerName { get; set; } = null!;
+    public string ReferrerLastName { get; set; } = null!;
+    public string ReferredName { get; set; } = null!;
+    public string ReferredLastName { get; set; } = null!;
+    public string ReferralCode { get; set; } = null!;
+}
