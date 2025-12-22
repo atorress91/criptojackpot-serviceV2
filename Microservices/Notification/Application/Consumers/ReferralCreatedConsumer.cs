@@ -2,12 +2,10 @@ using CryptoJackpot.Domain.Core.IntegrationEvents.Identity;
 using CryptoJackpot.Notification.Application.Commands;
 using MassTransit;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
-namespace CryptoJackpot.Notification.Api.Consumers;
+namespace CryptoJackpot.Notification.Application.Consumers;
 
-/// <summary>
-/// Consumes ReferralCreatedEvent from Kafka (published by Identity microservice)
-/// </summary>
 public class ReferralCreatedConsumer : IConsumer<ReferralCreatedEvent>
 {
     private readonly IMediator _mediator;
@@ -22,7 +20,7 @@ public class ReferralCreatedConsumer : IConsumer<ReferralCreatedEvent>
     public async Task Consume(ConsumeContext<ReferralCreatedEvent> context)
     {
         var message = context.Message;
-        _logger.LogInformation("Received ReferralCreatedEvent for referrer {Email}", message.ReferrerEmail);
+        _logger.LogInformation("Received ReferralCreatedEvent for {Email}", message.ReferrerEmail);
 
         await _mediator.Send(new SendReferralNotificationCommand
         {

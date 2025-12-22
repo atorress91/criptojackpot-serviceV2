@@ -2,12 +2,10 @@ using CryptoJackpot.Domain.Core.IntegrationEvents.Identity;
 using CryptoJackpot.Notification.Application.Commands;
 using MassTransit;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
-namespace CryptoJackpot.Notification.Api.Consumers;
+namespace CryptoJackpot.Notification.Application.Consumers;
 
-/// <summary>
-/// Consumes UserRegisteredEvent from Kafka (published by Identity microservice)
-/// </summary>
 public class UserRegisteredConsumer : IConsumer<UserRegisteredEvent>
 {
     private readonly IMediator _mediator;

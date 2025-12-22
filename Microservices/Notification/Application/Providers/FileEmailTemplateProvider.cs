@@ -1,10 +1,8 @@
 using CryptoJackpot.Notification.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 
-namespace CryptoJackpot.Notification.Api.Providers;
+namespace CryptoJackpot.Notification.Application.Providers;
 
-/// <summary>
-/// Loads email templates from HTML files in the Templates folder.
-/// </summary>
 public class FileEmailTemplateProvider : IEmailTemplateProvider
 {
     private readonly string _templatesPath;
@@ -19,7 +17,6 @@ public class FileEmailTemplateProvider : IEmailTemplateProvider
 
     public async Task<string?> GetTemplateAsync(string templateName)
     {
-        // Check cache first
         if (_templateCache.TryGetValue(templateName, out var cachedTemplate))
         {
             return cachedTemplate;

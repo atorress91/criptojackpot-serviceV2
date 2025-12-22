@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mail;
 
-namespace CryptoJackpot.Notification.Api.Providers;
+namespace CryptoJackpot.Notification.Application.Providers;
 
 public class SmtpEmailProvider : IEmailProvider
 {
@@ -22,11 +22,9 @@ public class SmtpEmailProvider : IEmailProvider
     {
         try
         {
-            using var client = new SmtpClient(_settings.Host, _settings.Port)
-            {
-                Credentials = new NetworkCredential(_settings.Username, _settings.Password),
-                EnableSsl = _settings.UseSsl
-            };
+            using var client = new SmtpClient(_settings.Host, _settings.Port);
+            client.Credentials = new NetworkCredential(_settings.Username, _settings.Password);
+            client.EnableSsl = _settings.UseSsl;
 
             var message = new MailMessage
             {
