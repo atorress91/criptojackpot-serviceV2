@@ -4,6 +4,7 @@ using CryptoJackpot.Identity.Application.Configuration;
 using CryptoJackpot.Identity.Application.Handlers.Commands;
 using CryptoJackpot.Identity.Application.Interfaces;
 using CryptoJackpot.Identity.Application.Services;
+using CryptoJackpot.Identity.Data;
 using CryptoJackpot.Identity.Data.Context;
 using CryptoJackpot.Identity.Data.Repositories;
 using CryptoJackpot.Identity.Domain.Interfaces;
@@ -137,6 +138,7 @@ public static class DependencyInjection
     private static void AddRepositories(IServiceCollection services)
     {
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
     }
 
     private static void AddApplicationServices(IServiceCollection services)
@@ -155,14 +157,17 @@ public static class DependencyInjection
 
     private static void AddInfrastructure(IServiceCollection services, IConfiguration configuration)
     {
-        // Use shared infrastructure from Infra.IoC with Kafka producers
-        DependencyContainer.RegisterServicesWithKafka(services, configuration, rider =>
-        {
-            // Register producers for events that Identity publishes
-            rider.AddProducer<UserRegisteredEvent>("user-registered");
-            rider.AddProducer<PasswordResetRequestedEvent>("password-reset-requested");
-            rider.AddProducer<ReferralCreatedEvent>("referral-created");
-            rider.AddProducer<UserLoggedInEvent>("user-logged-in");
-        });
+        // Use shared infrastructure with Kafka and Transactional Outbox
+        DependencyContainer.RegisterServicesWithKafka<IdentityDbContext>(
+            services, 
+            configuration, 
+            configureRider: rider =>
+            {
+                // Register producers for events that Identity publishes
+                rider.AddProducer<UserRegisteredEvent>("user-registered");
+                rider.AddProducer<PasswordResetRequestedEvent>("password-reset-requested");
+                rider.AddProducer<ReferralCreatedEvent>("referral-created");
+                rider.AddProducer<UserLoggedInEvent>("user-logged-in");
+            });
     }
 }
