@@ -12,9 +12,3 @@ public class UserDto
     public string? Token { get; set; }
     public RoleDto? Role { get; set; }
 }
-
-public class RoleDto
-{
-    public long Id { get; set; }
-    public string Name { get; set; } = null!;
-}

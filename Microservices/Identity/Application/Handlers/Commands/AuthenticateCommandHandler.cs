@@ -1,5 +1,3 @@
-using CryptoJackpot.Domain.Core.Bus;
-using CryptoJackpot.Domain.Core.IntegrationEvents.Identity;
 using CryptoJackpot.Domain.Core.Responses;
 using CryptoJackpot.Identity.Application.Commands;
 using CryptoJackpot.Identity.Application.DTOs;
@@ -15,18 +13,18 @@ public class AuthenticateCommandHandler : IRequestHandler<AuthenticateCommand, R
     private readonly IUserRepository _userRepository;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IEventBus _eventBus;
+    private readonly IIdentityEventPublisher _eventPublisher;
 
     public AuthenticateCommandHandler(
         IUserRepository userRepository,
         IJwtTokenService jwtTokenService,
         IPasswordHasher passwordHasher,
-        IEventBus eventBus)
+        IIdentityEventPublisher eventPublisher)
     {
         _userRepository = userRepository;
         _jwtTokenService = jwtTokenService;
         _passwordHasher = passwordHasher;
-        _eventBus = eventBus;
+        _eventPublisher = eventPublisher;
     }
 
     public async Task<ResultResponse<UserDto?>> Handle(AuthenticateCommand request, CancellationToken cancellationToken)
@@ -42,9 +40,8 @@ public class AuthenticateCommandHandler : IRequestHandler<AuthenticateCommand, R
         var userDto = user.ToDto();
         userDto.Token = _jwtTokenService.GenerateToken(user.Id.ToString());
 
-        await _eventBus.Publish(new UserLoggedInEvent(user.Id, user.Email, $"{user.Name} {user.LastName}"));
+        await _eventPublisher.PublishUserLoggedInAsync(user);
 
         return ResultResponse<UserDto?>.Ok(userDto);
     }
 }
-
