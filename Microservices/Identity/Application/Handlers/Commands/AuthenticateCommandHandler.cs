@@ -2,11 +2,12 @@ using CryptoJackpot.Domain.Core.Bus;
 using CryptoJackpot.Identity.Application.Commands;
 using CryptoJackpot.Identity.Application.DTOs;
 using CryptoJackpot.Identity.Application.Events;
+using CryptoJackpot.Identity.Application.Extensions;
 using CryptoJackpot.Identity.Application.Interfaces;
 using CryptoJackpot.Identity.Domain.Interfaces;
 using MediatR;
 
-namespace CryptoJackpot.Identity.Application.Handlers;
+namespace CryptoJackpot.Identity.Application.Handlers.Commands;
 
 public class AuthenticateCommandHandler : IRequestHandler<AuthenticateCommand, ResultResponse<UserDto?>>
 {
@@ -29,32 +30,20 @@ public class AuthenticateCommandHandler : IRequestHandler<AuthenticateCommand, R
 
     public async Task<ResultResponse<UserDto?>> Handle(AuthenticateCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetUserByEmailAsync(request.Email);
+        var user = await _userRepository.GetByEmailAsync(request.Email);
 
-        if (user == null || !_passwordHasher.Verify(user.Password, request.Password))
+        if (user == null || !_passwordHasher.Verify(request.Password, user.Password))
             return ResultResponse<UserDto?>.Failure(ErrorType.Unauthorized, "Invalid Credentials");
 
         if (!user.Status)
             return ResultResponse<UserDto?>.Failure(ErrorType.Forbidden, "User Not Verified");
 
-        var userDto = new UserDto
-        {
-            Id = user.Id,
-            Name = user.Name,
-            LastName = user.LastName,
-            Email = user.Email,
-            ImagePath = user.ImagePath,
-            Role = new RoleDto
-            {
-                Id = user.Role.Id,
-                Name = user.Role.Name
-            },
-            Token = _jwtTokenService.GenerateToken(user.Id.ToString())
-        };
+        var userDto = user.ToDto();
+        userDto.Token = _jwtTokenService.GenerateToken(user.Id.ToString());
 
-        // Publish event for other microservices (Notification, Audit, etc.)
         await _eventBus.Publish(new UserLoggedInEvent(user.Id, user.Email, $"{user.Name} {user.LastName}"));
 
         return ResultResponse<UserDto?>.Ok(userDto);
     }
 }
+

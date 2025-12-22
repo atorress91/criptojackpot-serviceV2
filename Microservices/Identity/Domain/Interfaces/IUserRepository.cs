@@ -4,6 +4,11 @@ namespace CryptoJackpot.Identity.Domain.Interfaces;
 
 public interface IUserRepository
 {
-    Task<User?> GetUserByEmailAsync(string email);
-    // Add other methods as needed later
+    Task<User?> GetByIdAsync(long id);
+    Task<User?> GetByEmailAsync(string email);
+    Task<User?> GetBySecurityCodeAsync(string securityCode);
+    Task<bool> ExistsByEmailAsync(string email);
+    Task<User> CreateAsync(User user);
+    Task<User> UpdateAsync(User user);
+    Task<IEnumerable<User>> GetAllAsync(long? excludeUserId = null);
 }

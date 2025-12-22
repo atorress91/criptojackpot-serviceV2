@@ -1,4 +1,4 @@
-using CryptoJackpot.Identity.Application.Handlers;
+using CryptoJackpot.Identity.Application.Handlers.Commands;
 using CryptoJackpot.Identity.Application.Interfaces;
 using CryptoJackpot.Identity.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +14,7 @@ public static class DependencyInjection
 
         // Application Services
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserService, UserService>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 

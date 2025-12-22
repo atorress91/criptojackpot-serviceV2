@@ -14,10 +14,52 @@ public class UserRepository : IUserRepository
         _context = context;
     }
 
-    public async Task<User?> GetUserByEmailAsync(string email)
+    public async Task<User?> GetByIdAsync(long id)
+    {
+        return await _context.Users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Id == id);
+    }
+
+    public async Task<User?> GetByEmailAsync(string email)
     {
         return await _context.Users
             .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.Email == email);
+    }
+
+    public async Task<User?> GetBySecurityCodeAsync(string securityCode)
+    {
+        return await _context.Users
+            .FirstOrDefaultAsync(u => u.SecurityCode == securityCode);
+    }
+
+    public async Task<bool> ExistsByEmailAsync(string email)
+    {
+        return await _context.Users.AnyAsync(u => u.Email == email);
+    }
+
+    public async Task<User> CreateAsync(User user)
+    {
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+        return user;
+    }
+
+    public async Task<User> UpdateAsync(User user)
+    {
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
+        return user;
+    }
+
+    public async Task<IEnumerable<User>> GetAllAsync(long? excludeUserId = null)
+    {
+        var query = _context.Users.Include(u => u.Role).AsQueryable();
+        
+        if (excludeUserId.HasValue)
+            query = query.Where(u => u.Id != excludeUserId.Value);
+
+        return await query.ToListAsync();
     }
 }
