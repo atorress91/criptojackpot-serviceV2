@@ -143,6 +143,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<ICountryRepository, CountryRepository>();
     }
 
     private static void AddApplicationServices(IServiceCollection services)
@@ -162,8 +163,8 @@ public static class DependencyInjection
     {
         // Use shared infrastructure with Kafka and Transactional Outbox
         DependencyContainer.RegisterServicesWithKafka<IdentityDbContext>(
-            services, 
-            configuration, 
+            services,
+            configuration,
             configureRider: rider =>
             {
                 // Register producers for events that Identity publishes
