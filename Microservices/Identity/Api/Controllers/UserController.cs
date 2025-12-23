@@ -1,4 +1,4 @@
-using CryptoJackpot.Identity.Api.Extensions;
+using CryptoJackpot.Domain.Core.Extensions;
 using CryptoJackpot.Identity.Application.Commands;
 using CryptoJackpot.Identity.Application.Interfaces;
 using CryptoJackpot.Identity.Application.Requests;

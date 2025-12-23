@@ -1,4 +1,4 @@
-using CryptoJackpot.Notification.Api.Extensions;
+using CryptoJackpot.Domain.Core.Extensions;
 using CryptoJackpot.Notification.Application.DTOs;
 using CryptoJackpot.Notification.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
