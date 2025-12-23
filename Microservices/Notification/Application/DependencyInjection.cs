@@ -6,7 +6,6 @@ using CryptoJackpot.Notification.Application.Consumers;
 using CryptoJackpot.Notification.Application.Handlers.Commands;
 using CryptoJackpot.Notification.Application.Interfaces;
 using CryptoJackpot.Notification.Application.Providers;
-using CryptoJackpot.Notification.Application.Services;
 using CryptoJackpot.Notification.Data.Context;
 using CryptoJackpot.Notification.Data.Repositories;
 using CryptoJackpot.Notification.Domain.Interfaces;
@@ -86,9 +85,6 @@ public static class DependencyInjection
     {
         // MediatR
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(SendEmailConfirmationHandler).Assembly));
-
-        // Application Services
-        services.AddScoped<INotificationService, NotificationService>();
     }
 
     private static void AddInfrastructure(IServiceCollection services, IConfiguration configuration)

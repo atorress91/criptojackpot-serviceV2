@@ -1,6 +1,6 @@
 using CryptoJackpot.Domain.Core.Extensions;
 using CryptoJackpot.Identity.Application.Commands;
-using CryptoJackpot.Identity.Application.Interfaces;
+using CryptoJackpot.Identity.Application.Queries;
 using CryptoJackpot.Identity.Application.Requests;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -12,12 +12,10 @@ namespace CryptoJackpot.Identity.Api.Controllers;
 [Route("api/v1/[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly IUserService _userService;
     private readonly IMediator _mediator;
 
-    public UserController(IUserService userService, IMediator mediator)
+    public UserController(IMediator mediator)
     {
-        _userService = userService;
         _mediator = mediator;
     }
 
@@ -25,35 +23,64 @@ public class UserController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] CreateUserRequest request)
     {
-        var result = await _userService.CreateUserAsync(request);
+        var command = new CreateUserCommand
+        {
+            Email = request.Email,
+            Password = request.Password,
+            Name = request.Name,
+            LastName = request.LastName,
+            Phone = request.Phone,
+            CountryId = request.CountryId,
+            ReferralCode = request.ReferralCode
+        };
+
+        var result = await _mediator.Send(command);
         return result.ToActionResult();
     }
 
     [HttpGet("{userId:long}")]
     public async Task<IActionResult> GetById(long userId)
     {
-        var result = await _userService.GetUserByIdAsync(userId);
+        var query = new GetUserByIdQuery { UserId = userId };
+        var result = await _mediator.Send(query);
         return result.ToActionResult();
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] long? excludeUserId = null)
     {
-        var result = await _userService.GetAllUsersAsync(excludeUserId);
+        var query = new GetAllUsersQuery { ExcludeUserId = excludeUserId };
+        var result = await _mediator.Send(query);
         return result.ToActionResult();
     }
 
     [HttpPut("{userId:long}")]
     public async Task<IActionResult> Update(long userId, [FromBody] UpdateUserRequest request)
     {
-        var result = await _userService.UpdateUserAsync(userId, request);
+        var command = new UpdateUserCommand
+        {
+            UserId = userId,
+            Name = request.Name,
+            LastName = request.LastName,
+            Phone = request.Phone,
+            Password = request.Password
+        };
+
+        var result = await _mediator.Send(command);
         return result.ToActionResult();
     }
 
     [HttpPut("password")]
     public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordRequest request)
     {
-        var result = await _userService.UpdatePasswordAsync(request);
+        var command = new UpdatePasswordCommand
+        {
+            UserId = request.UserId,
+            CurrentPassword = request.CurrentPassword,
+            NewPassword = request.NewPassword
+        };
+
+        var result = await _mediator.Send(command);
         return result.ToActionResult();
     }
 
@@ -61,7 +88,8 @@ public class UserController : ControllerBase
     [HttpPost("password/reset-request")]
     public async Task<IActionResult> RequestPasswordReset([FromBody] RequestPasswordResetRequest request)
     {
-        var result = await _userService.RequestPasswordResetAsync(request.Email);
+        var command = new RequestPasswordResetCommand { Email = request.Email };
+        var result = await _mediator.Send(command);
         return result.ToActionResult();
     }
 
@@ -69,20 +97,26 @@ public class UserController : ControllerBase
     [HttpPost("password/reset")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordWithCodeRequest request)
     {
-        var result = await _userService.ResetPasswordWithCodeAsync(request);
+        var command = new ResetPasswordWithCodeCommand
+        {
+            Email = request.Email,
+            SecurityCode = request.SecurityCode,
+            NewPassword = request.NewPassword,
+            ConfirmPassword = request.ConfirmPassword
+        };
+
+        var result = await _mediator.Send(command);
         return result.ToActionResult();
     }
 
     [HttpPost("{userId:long}/security-code")]
     public async Task<IActionResult> GenerateSecurityCode(long userId)
     {
-        var result = await _userService.GenerateNewSecurityCodeAsync(userId);
+        var command = new GenerateNewSecurityCodeCommand { UserId = userId };
+        var result = await _mediator.Send(command);
         return result.ToActionResult();
     }
 
-    /// <summary>
-    /// Generates a presigned URL for uploading a profile image
-    /// </summary>
     [HttpPost("{userId:long}/image/upload-url")]
     public async Task<IActionResult> GenerateUploadUrl(long userId, [FromBody] GenerateUploadUrlRequest request)
     {
@@ -93,14 +127,11 @@ public class UserController : ControllerBase
             ContentType = request.ContentType,
             ExpirationMinutes = request.ExpirationMinutes
         };
-        
+
         var result = await _mediator.Send(command);
         return result.ToActionResult();
     }
 
-    /// <summary>
-    /// Updates the user's profile image after upload is complete
-    /// </summary>
     [HttpPut("{userId:long}/image")]
     public async Task<IActionResult> UpdateImage(long userId, [FromBody] UpdateUserImageRequest request)
     {
@@ -109,7 +140,7 @@ public class UserController : ControllerBase
             UserId = userId,
             StorageKey = request.StorageKey
         };
-        
+
         var result = await _mediator.Send(command);
         return result.ToActionResult();
     }

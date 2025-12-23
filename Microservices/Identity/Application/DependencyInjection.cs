@@ -150,15 +150,11 @@ public static class DependencyInjection
         // MediatR
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(AuthenticateCommandHandler).Assembly));
 
-        // Application Services
-        services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IUserService, UserService>();
+        // Infrastructure Services
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IIdentityEventPublisher, IdentityEventPublisher>();
         services.AddScoped<IReferralService, ReferralService>();
-        
-        // Infrastructure Services
         services.AddScoped<IStorageService, DigitalOceanStorageService>();
     }
 

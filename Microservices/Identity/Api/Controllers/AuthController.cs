@@ -1,6 +1,7 @@
 using CryptoJackpot.Domain.Core.Extensions;
-using CryptoJackpot.Identity.Application.Interfaces;
+using CryptoJackpot.Identity.Application.Commands;
 using CryptoJackpot.Identity.Application.Requests;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,18 +11,24 @@ namespace CryptoJackpot.Identity.Api.Controllers;
 [Route("api/v1/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService _authService;
+    private readonly IMediator _mediator;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IMediator mediator)
     {
-        _authService = authService;
+        _mediator = mediator;
     }
 
     [AllowAnonymous]
     [HttpPost]
     public async Task<IActionResult> Authenticate([FromBody] AuthenticateRequest request)
     {
-        var result = await _authService.AuthenticateAsync(request);
+        var command = new AuthenticateCommand
+        {
+            Email = request.Email,
+            Password = request.Password
+        };
+
+        var result = await _mediator.Send(command);
         return result.ToActionResult();
     }
 }
