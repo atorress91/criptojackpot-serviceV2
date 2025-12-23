@@ -144,6 +144,7 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ICountryRepository, CountryRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
     }
 
     private static void AddApplicationServices(IServiceCollection services)
