@@ -33,4 +33,13 @@ public class AuthController : ControllerBase
         var result = await _mediator.Send(command);
         return result.ToActionResult();
     }
+
+    [AllowAnonymous]
+    [HttpPost("confirm-email/{token}")]
+    public async Task<IActionResult> ConfirmEmail(string token)
+    {
+        var command = new ConfirmEmailCommand { Token = token };
+        var result = await _mediator.Send(command);
+        return result.ToActionResult();
+    }
 }
