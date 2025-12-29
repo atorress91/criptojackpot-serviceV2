@@ -1,4 +1,6 @@
-﻿namespace CryptoJackpot.Identity.Domain.Models;
+﻿using CryptoJackpot.Domain.Core.Models;
+
+namespace CryptoJackpot.Identity.Domain.Models;
 
 public class Permission : BaseEntity
 {

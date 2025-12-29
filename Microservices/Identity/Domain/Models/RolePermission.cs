@@ -1,4 +1,6 @@
-﻿using CryptoJackpot.Identity.Domain.Enums;
+﻿using CryptoJackpot.Domain.Core.Models;
+using CryptoJackpot.Identity.Domain.Enums;
+
 namespace CryptoJackpot.Identity.Domain.Models;
 
 public class RolePermission : BaseEntity
