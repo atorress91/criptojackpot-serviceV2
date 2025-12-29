@@ -1,4 +1,4 @@
-﻿﻿using CryptoJackpot.Domain.Core.Bus;
+﻿using CryptoJackpot.Domain.Core.Bus;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
