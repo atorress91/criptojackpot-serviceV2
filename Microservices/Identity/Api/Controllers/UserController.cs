@@ -22,7 +22,7 @@ public class UserController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpPost("register")]
+    [HttpPost()]
     public async Task<IActionResult> Register([FromBody] CreateUserRequest request)
     {
         var command = new CreateUserCommand
@@ -40,15 +40,17 @@ public class UserController : ControllerBase
         return result.ToActionResult();
     }
 
+    [Authorize]
     [HttpGet("{userId:long}")]
-    public async Task<IActionResult> GetById(long userId)
+    public async Task<IActionResult> GetById([FromRoute] long userId)
     {
         var query = new GetUserByIdQuery { UserId = userId };
         var result = await _mediator.Send(query);
         return result.ToActionResult();
     }
 
-    [HttpGet]
+    [Authorize]
+    [HttpGet("get-all-users")]
     public async Task<IActionResult> GetAll([FromQuery] long? excludeUserId = null)
     {
         var query = new GetAllUsersQuery { ExcludeUserId = excludeUserId };
@@ -56,6 +58,7 @@ public class UserController : ControllerBase
         return result.ToActionResult();
     }
 
+    [Authorize]
     [HttpPut("{userId:long}")]
     public async Task<IActionResult> Update(long userId, [FromBody] UpdateUserRequest request)
     {
@@ -72,7 +75,7 @@ public class UserController : ControllerBase
         return result.ToActionResult();
     }
 
-    [HttpPut("password")]
+    [HttpPut("update-password")]
     public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordRequest request)
     {
         var command = new UpdatePasswordCommand
@@ -87,7 +90,7 @@ public class UserController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpPost("password/reset-request")]
+    [HttpPost("request-password-reset")]
     public async Task<IActionResult> RequestPasswordReset([FromBody] RequestPasswordResetRequest request)
     {
         var command = new RequestPasswordResetCommand { Email = request.Email };
@@ -96,7 +99,7 @@ public class UserController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpPost("password/reset")]
+    [HttpPost("reset-password-with-code")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordWithCodeRequest request)
     {
         var command = new ResetPasswordWithCodeCommand
@@ -111,7 +114,8 @@ public class UserController : ControllerBase
         return result.ToActionResult();
     }
 
-    [HttpPost("{userId:long}/security-code")]
+    [Authorize]
+    [HttpPost("{userId:long}/generate-new-security-code")]
     public async Task<IActionResult> GenerateSecurityCode(long userId)
     {
         var command = new GenerateNewSecurityCodeCommand { UserId = userId };
