@@ -9,7 +9,6 @@ public class CountryConfiguration : IEntityTypeConfiguration<Country>
 {
     public void Configure(EntityTypeBuilder<Country> builder)
     {
-        builder.ToTable("countries");
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Name).IsRequired().HasColumnType(ColumnTypes.Text).HasMaxLength(100);
         builder.Property(e => e.Iso3).HasColumnType(ColumnTypes.Text).HasMaxLength(3);

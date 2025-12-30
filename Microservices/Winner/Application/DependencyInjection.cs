@@ -97,7 +97,8 @@ public static class DependencyInjection
             throw new InvalidOperationException("Database connection string 'DefaultConnection' is not configured");
 
         services.AddDbContext<WinnerDbContext>(options =>
-            options.UseNpgsql(connectionString));
+            options.UseNpgsql(connectionString)
+                .UseSnakeCaseNamingConvention());
     }
 
     private static void AddSwagger(IServiceCollection services)
