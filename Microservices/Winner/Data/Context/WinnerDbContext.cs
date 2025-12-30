@@ -13,9 +13,9 @@ public class WinnerDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // MassTransit Outbox configuration
-        modelBuilder.AddInboxStateEntity();
-        modelBuilder.AddOutboxMessageEntity();
-        modelBuilder.AddOutboxStateEntity();
+        // MassTransit Outbox configuration with snake_case naming
+        modelBuilder.AddInboxStateEntity(x => x.ToTable("inbox_state"));
+        modelBuilder.AddOutboxMessageEntity(x => x.ToTable("outbox_message"));
+        modelBuilder.AddOutboxStateEntity(x => x.ToTable("outbox_state"));
     }
 }

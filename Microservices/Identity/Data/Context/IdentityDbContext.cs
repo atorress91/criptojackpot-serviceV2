@@ -24,9 +24,9 @@ public class IdentityDbContext : DbContext
         // Apply all entity configurations from this assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
         
-        // Configure MassTransit Outbox tables
-        modelBuilder.AddInboxStateEntity();
-        modelBuilder.AddOutboxMessageEntity();
-        modelBuilder.AddOutboxStateEntity();
+        // Configure MassTransit Outbox tables with snake_case naming
+        modelBuilder.AddInboxStateEntity(x => x.ToTable("inbox_state"));
+        modelBuilder.AddOutboxMessageEntity(x => x.ToTable("outbox_message"));
+        modelBuilder.AddOutboxStateEntity(x => x.ToTable("outbox_state"));
     }
 }

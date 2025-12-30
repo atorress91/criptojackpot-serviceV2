@@ -17,10 +17,10 @@ public class NotificationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Configure MassTransit Inbox/Outbox tables for idempotency
-        modelBuilder.AddInboxStateEntity();
-        modelBuilder.AddOutboxMessageEntity();
-        modelBuilder.AddOutboxStateEntity();
+        // Configure MassTransit Inbox/Outbox tables with snake_case naming
+        modelBuilder.AddInboxStateEntity(x => x.ToTable("inbox_state"));
+        modelBuilder.AddOutboxMessageEntity(x => x.ToTable("outbox_message"));
+        modelBuilder.AddOutboxStateEntity(x => x.ToTable("outbox_state"));
 
         modelBuilder.Entity<EmailTemplate>(entity =>
         {
