@@ -6,9 +6,10 @@
 
 set -e
 
+# Parámetros
 VERSION="${1:-v1.0.0}"
 SKIP_BUILD="${2:-false}"
-USE_GENERATED_SECRETS="${3:-false}"
+SKIP_SECRETS="${3:-false}"
 
 echo "🚀 Iniciando despliegue de CryptoJackpot..."
 
@@ -17,12 +18,14 @@ echo "🚀 Iniciando despliegue de CryptoJackpot..."
 # -----------------------------------------------------------------------------
 CONFIG_PATH="deploy-config.json"
 REGISTRY="registry.digitalocean.com/cryptojackpot"
+TERRAFORM_MANAGED=false
 
 if [ -f "$CONFIG_PATH" ]; then
     echo "📄 Usando configuración de Terraform..."
     REGISTRY=$(jq -r '.registry_url' $CONFIG_PATH)
     CLUSTER_NAME=$(jq -r '.cluster_name' $CONFIG_PATH)
     ENVIRONMENT=$(jq -r '.environment' $CONFIG_PATH)
+    TERRAFORM_MANAGED=true
     echo "   Registry: $REGISTRY"
     echo "   Cluster: $CLUSTER_NAME"
     echo "   Environment: $ENVIRONMENT"
@@ -75,31 +78,70 @@ done
 # -----------------------------------------------------------------------------
 echo "☸️ Aplicando configuraciones de Kubernetes..."
 
+# Namespace y ConfigMap
 kubectl apply -f k8s/base/namespace.yaml
 kubectl apply -f k8s/base/configmap.yaml
 
-# Usar secrets generados por Terraform si están disponibles
-SECRETS_PATH="k8s/base/secrets.yaml"
-if [ "$USE_GENERATED_SECRETS" = "true" ] && [ -f "k8s/base/secrets.generated.yaml" ]; then
-    echo "🔐 Usando secrets generados por Terraform..."
-    SECRETS_PATH="k8s/base/secrets.generated.yaml"
+# -----------------------------------------------------------------------------
+# Secrets - Lógica mejorada para Terraform
+# -----------------------------------------------------------------------------
+if [ "$SKIP_SECRETS" = "true" ]; then
+    echo "⏭️ Saltando aplicación de secrets (SKIP_SECRETS=true)"
+    echo "   Asumiendo que Terraform ya los aplicó al cluster"
+elif [ "$TERRAFORM_MANAGED" = "true" ]; then
+    # Si Terraform gestiona la infra, los secrets ya están en el cluster
+    echo "🔐 Infraestructura gestionada por Terraform..."
+    echo "   Los secrets (postgres, jwt, spaces, kafka) ya están en el cluster"
+    
+    # Solo aplicar el archivo generado como backup/actualización si existe
+    if [ -f "k8s/base/secrets.generated.yaml" ]; then
+        echo "   Aplicando secrets.generated.yaml como actualización..."
+        kubectl apply -f k8s/base/secrets.generated.yaml
+    fi
 else
-    echo "⚠️ Usando secrets manuales (k8s/base/secrets.yaml)"
-    echo "   Para usar secrets de Terraform: ./deploy-terraform.sh v1.0.0 false true"
+    # Sin Terraform - usar archivo manual
+    echo "⚠️ Sin Terraform - usando secrets manuales..."
+    
+    if [ -f "k8s/base/secrets.generated.yaml" ]; then
+        echo "   Encontrado secrets.generated.yaml - usando este archivo"
+        kubectl apply -f k8s/base/secrets.generated.yaml
+    elif [ -f "k8s/base/secrets.yaml" ]; then
+        echo "   ⚠️ ADVERTENCIA: Usando secrets.yaml con placeholders"
+        echo "   Asegúrate de haber editado k8s/base/secrets.yaml con valores reales!"
+        read -p "   ¿Continuar? (s/N) " confirm
+        if [ "$confirm" != "s" ] && [ "$confirm" != "S" ]; then
+            echo "   Cancelado. Edita secrets.yaml o ejecuta Terraform primero."
+            exit 1
+        fi
+        kubectl apply -f k8s/base/secrets.yaml
+    else
+        echo "❌ ERROR: No se encontró ningún archivo de secrets"
+        echo "   Ejecuta 'terraform apply' o crea k8s/base/secrets.yaml manualmente"
+        exit 1
+    fi
 fi
-kubectl apply -f "$SECRETS_PATH"
 
-# NetworkPolicies
+# -----------------------------------------------------------------------------
+# NetworkPolicies (seguridad de red)
+# -----------------------------------------------------------------------------
 kubectl apply -f k8s/network/
 
+# -----------------------------------------------------------------------------
 # Kafka/Redpanda
+# NOTA: El secret redpanda-credentials es gestionado por Terraform
+# El archivo redpanda.yaml solo contiene ConfigMap y StatefulSet
+# -----------------------------------------------------------------------------
+echo "🔄 Desplegando Redpanda (Kafka)..."
 kubectl apply -f k8s/kafka/redpanda.yaml
 
 # Esperar a que Redpanda esté listo
 echo "⏳ Esperando a que Redpanda esté listo..."
-kubectl wait --for=condition=ready pod -l app=redpanda -n cryptojackpot --timeout=120s
+kubectl wait --for=condition=ready pod -l app=redpanda -n cryptojackpot --timeout=180s
 
+# -----------------------------------------------------------------------------
 # Microservicios
+# -----------------------------------------------------------------------------
+echo "🚀 Desplegando microservicios..."
 kubectl apply -f k8s/microservices/identity/
 kubectl apply -f k8s/microservices/lottery/
 kubectl apply -f k8s/microservices/order/
@@ -107,7 +149,9 @@ kubectl apply -f k8s/microservices/wallet/
 kubectl apply -f k8s/microservices/winner/
 kubectl apply -f k8s/microservices/notification/
 
+# -----------------------------------------------------------------------------
 # Ingress
+# -----------------------------------------------------------------------------
 kubectl apply -f k8s/ingress/namespace.yaml
 kubectl label namespace ingress-nginx name=ingress-nginx --overwrite 2>/dev/null || true
 kubectl apply -f k8s/ingress/ingress.yaml
@@ -136,4 +180,9 @@ if [ -n "$LB_IP" ]; then
     echo "🌍 Load Balancer IP: $LB_IP"
     echo "   Configura tu DNS para apuntar a esta IP"
 fi
+
+echo ""
+echo "📝 Comandos útiles:"
+echo "   kubectl logs -f deployment/identity-api -n cryptojackpot"
+echo "   kubectl get events -n cryptojackpot --sort-by='.lastTimestamp'"
 

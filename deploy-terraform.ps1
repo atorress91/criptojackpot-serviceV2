@@ -6,7 +6,7 @@
 param(
     [string]$Version = "v1.0.0",
     [switch]$SkipBuild,
-    [switch]$UseGeneratedSecrets
+    [switch]$SkipSecrets  # Usar si Terraform ya aplicó los secrets directamente al cluster
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,11 +18,13 @@ Write-Host "🚀 Iniciando despliegue de CryptoJackpot..." -ForegroundColor Cyan
 # -----------------------------------------------------------------------------
 $configPath = "deploy-config.json"
 $Registry = "registry.digitalocean.com/cryptojackpot"
+$TerraformManaged = $false
 
 if (Test-Path $configPath) {
     Write-Host "📄 Usando configuración de Terraform..." -ForegroundColor Yellow
     $config = Get-Content $configPath | ConvertFrom-Json
     $Registry = $config.registry_url
+    $TerraformManaged = $true
     Write-Host "   Registry: $Registry" -ForegroundColor Gray
     Write-Host "   Cluster: $($config.cluster_name)" -ForegroundColor Gray
     Write-Host "   Environment: $($config.environment)" -ForegroundColor Gray
@@ -80,33 +82,74 @@ foreach ($svc in $microservices) {
 # -----------------------------------------------------------------------------
 Write-Host "☸️ Aplicando configuraciones de Kubernetes..." -ForegroundColor Yellow
 
-# Aplicar en orden
+# Namespace y ConfigMap
 kubectl apply -f k8s/base/namespace.yaml
 kubectl apply -f k8s/base/configmap.yaml
 
-# Usar secrets generados por Terraform si están disponibles
-$secretsPath = "k8s/base/secrets.yaml"
-if ($UseGeneratedSecrets -and (Test-Path "k8s/base/secrets.generated.yaml")) {
-    Write-Host "🔐 Usando secrets generados por Terraform..." -ForegroundColor Green
-    $secretsPath = "k8s/base/secrets.generated.yaml"
+# -----------------------------------------------------------------------------
+# Secrets - Lógica mejorada para Terraform
+# -----------------------------------------------------------------------------
+if ($SkipSecrets) {
+    Write-Host "⏭️ Saltando aplicación de secrets (--SkipSecrets)" -ForegroundColor Yellow
+    Write-Host "   Asumiendo que Terraform ya los aplicó al cluster" -ForegroundColor Gray
+}
+elseif ($TerraformManaged) {
+    # Si Terraform gestiona la infra, los secrets ya están en el cluster
+    Write-Host "🔐 Infraestructura gestionada por Terraform..." -ForegroundColor Green
+    Write-Host "   Los secrets (postgres, jwt, spaces, kafka) ya están en el cluster" -ForegroundColor Gray
+    
+    # Solo aplicar el archivo generado como backup/actualización si existe
+    if (Test-Path "k8s/base/secrets.generated.yaml") {
+        Write-Host "   Aplicando secrets.generated.yaml como actualización..." -ForegroundColor Gray
+        kubectl apply -f k8s/base/secrets.generated.yaml
+    }
 }
 else {
-    Write-Host "⚠️ Usando secrets manuales (k8s/base/secrets.yaml)" -ForegroundColor Yellow
-    Write-Host "   Para usar secrets de Terraform: .\deploy.ps1 -UseGeneratedSecrets" -ForegroundColor Gray
+    # Sin Terraform - usar archivo manual
+    Write-Host "⚠️ Sin Terraform - usando secrets manuales..." -ForegroundColor Yellow
+    
+    if (Test-Path "k8s/base/secrets.generated.yaml") {
+        Write-Host "   Encontrado secrets.generated.yaml - usando este archivo" -ForegroundColor Green
+        kubectl apply -f k8s/base/secrets.generated.yaml
+    }
+    elseif (Test-Path "k8s/base/secrets.yaml") {
+        Write-Host "   ⚠️ ADVERTENCIA: Usando secrets.yaml con placeholders" -ForegroundColor Red
+        Write-Host "   Asegúrate de haber editado k8s/base/secrets.yaml con valores reales!" -ForegroundColor Red
+        $confirm = Read-Host "   ¿Continuar? (s/N)"
+        if ($confirm -ne "s" -and $confirm -ne "S") {
+            Write-Host "   Cancelado. Edita secrets.yaml o ejecuta Terraform primero." -ForegroundColor Yellow
+            exit 1
+        }
+        kubectl apply -f k8s/base/secrets.yaml
+    }
+    else {
+        Write-Host "❌ ERROR: No se encontró ningún archivo de secrets" -ForegroundColor Red
+        Write-Host "   Ejecuta 'terraform apply' o crea k8s/base/secrets.yaml manualmente" -ForegroundColor Red
+        exit 1
+    }
 }
-kubectl apply -f $secretsPath
 
+# -----------------------------------------------------------------------------
 # NetworkPolicies (seguridad de red)
+# -----------------------------------------------------------------------------
 kubectl apply -f k8s/network/
 
+# -----------------------------------------------------------------------------
 # Kafka/Redpanda
+# NOTA: El secret redpanda-credentials es gestionado por Terraform
+# El archivo redpanda.yaml solo contiene ConfigMap y StatefulSet
+# -----------------------------------------------------------------------------
+Write-Host "🔄 Desplegando Redpanda (Kafka)..." -ForegroundColor Yellow
 kubectl apply -f k8s/kafka/redpanda.yaml
 
 # Esperar a que Redpanda esté listo
 Write-Host "⏳ Esperando a que Redpanda esté listo..." -ForegroundColor Yellow
-kubectl wait --for=condition=ready pod -l app=redpanda -n cryptojackpot --timeout=120s
+kubectl wait --for=condition=ready pod -l app=redpanda -n cryptojackpot --timeout=180s
 
+# -----------------------------------------------------------------------------
 # Microservicios
+# -----------------------------------------------------------------------------
+Write-Host "🚀 Desplegando microservicios..." -ForegroundColor Yellow
 kubectl apply -f k8s/microservices/identity/
 kubectl apply -f k8s/microservices/lottery/
 kubectl apply -f k8s/microservices/order/
@@ -114,7 +157,9 @@ kubectl apply -f k8s/microservices/wallet/
 kubectl apply -f k8s/microservices/winner/
 kubectl apply -f k8s/microservices/notification/
 
-# Ingress namespace y configuración
+# -----------------------------------------------------------------------------
+# Ingress
+# -----------------------------------------------------------------------------
 kubectl apply -f k8s/ingress/namespace.yaml
 kubectl label namespace ingress-nginx name=ingress-nginx --overwrite 2>$null
 kubectl apply -f k8s/ingress/ingress.yaml
@@ -143,4 +188,9 @@ if ($lbIP) {
     Write-Host "🌍 Load Balancer IP: $lbIP" -ForegroundColor Green
     Write-Host "   Configura tu DNS para apuntar a esta IP" -ForegroundColor Gray
 }
+
+Write-Host ""
+Write-Host "📝 Comandos útiles:" -ForegroundColor Cyan
+Write-Host "   kubectl logs -f deployment/identity-api -n cryptojackpot" -ForegroundColor Gray
+Write-Host "   kubectl get events -n cryptojackpot --sort-by='.lastTimestamp'" -ForegroundColor Gray
 

@@ -1,19 +1,20 @@
+# =============================================================================
 # Redpanda - Kafka compatible, menor uso de recursos
 # Con autenticación SASL/SCRAM habilitada para seguridad
-apiVersion: v1
-kind: Secret
-metadata:
-  name: redpanda-credentials
-  namespace: cryptojackpot
-type: Opaque
-stringData:
-  # Usuario para los microservicios
-  REDPANDA_SASL_USERNAME: "cryptojackpot-app"
-  REDPANDA_SASL_PASSWORD: "CryptoJackpot2025SecureKafka!"
-  # Usuario admin para gestión
-  REDPANDA_ADMIN_USERNAME: "admin"
-  REDPANDA_ADMIN_PASSWORD: "RedpandaAdmin2025Secure!"
----
+# =============================================================================
+#
+# ⚠️ IMPORTANTE: El Secret "redpanda-credentials" es gestionado por Terraform
+# NO definirlo aquí para evitar sobrescribir credenciales seguras generadas.
+# Ver: terraform/modules/secrets/main.tf
+#
+# El secreto se crea automáticamente con:
+#   - REDPANDA_SASL_USERNAME: cryptojackpot-app
+#   - REDPANDA_SASL_PASSWORD: <generada aleatoriamente>
+#   - REDPANDA_ADMIN_USERNAME: admin
+#   - REDPANDA_ADMIN_PASSWORD: <generada aleatoriamente>
+#
+# =============================================================================
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
