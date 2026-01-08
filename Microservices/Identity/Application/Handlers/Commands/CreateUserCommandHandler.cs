@@ -1,4 +1,4 @@
-using CryptoJackpot.Domain.Core.Responses;
+using CryptoJackpot.Domain.Core.Extensions;
 using CryptoJackpot.Domain.Core.Responses.Errors;
 using CryptoJackpot.Identity.Application.Commands;
 using CryptoJackpot.Identity.Application.DTOs;

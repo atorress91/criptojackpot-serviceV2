@@ -1,7 +1,7 @@
 ﻿using CryptoJackpot.Domain.Core.Responses.Successes;
 using FluentResults;
 
-namespace CryptoJackpot.Domain.Core.Responses;
+namespace CryptoJackpot.Domain.Core.Extensions;
 
 /// <summary>
 /// Helper methods to create Result with typed successes.
