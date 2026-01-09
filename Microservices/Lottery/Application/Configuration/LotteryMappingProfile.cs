@@ -1,5 +1,4 @@
 using AutoMapper;
-using CryptoJackpot.Domain.Core.Mapping;
 using CryptoJackpot.Domain.Core.Models;
 using CryptoJackpot.Domain.Core.Requests;
 using CryptoJackpot.Lottery.Application.Commands;
@@ -36,9 +35,12 @@ public class LotteryMappingProfile : Profile
         // Pagination mappings
         CreateMap<PaginationRequest, Pagination>();
         
-        // PagedList<TSource> to PagedList<TDestination> mapping
-        CreateMap(typeof(PagedList<>), typeof(PagedList<>))
-            .ConvertUsing(typeof(PagedListConverter<,>));
+        // PagedList<Prize> to PagedList<PrizeDto> mapping
+        CreateMap<PagedList<Prize>, PagedList<PrizeDto>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
+            .ForMember(dest => dest.TotalItems, opt => opt.MapFrom(src => src.TotalItems))
+            .ForMember(dest => dest.PageNumber, opt => opt.MapFrom(src => src.PageNumber))
+            .ForMember(dest => dest.PageSize, opt => opt.MapFrom(src => src.PageSize));
     }
 }
 

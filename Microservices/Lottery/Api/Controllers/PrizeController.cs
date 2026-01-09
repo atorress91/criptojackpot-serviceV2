@@ -34,7 +34,7 @@ public class PrizeController : ControllerBase
         return result.ToActionResult();
     }
 
-    [Authorize]
+    // [Authorize]
     [HttpGet]
     public async Task<IActionResult> GetAllPrizes([FromQuery] PaginationRequest pagination)
     {
